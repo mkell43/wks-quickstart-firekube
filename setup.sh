@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 unset CDPATH
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}" || exit 1
 
 . lib/functions.sh
@@ -12,9 +12,9 @@ cd "${SCRIPT_DIR}" || exit 1
 
 # user-overrideable via ENV
 if command -v sudo >/dev/null 2>&1; then
-    sudo="${sudo:-"sudo"}"
+  sudo="${sudo:-"sudo"}"
 else
-    sudo="${sudo}"
+  sudo="${sudo}"
 fi
 
 set -euo pipefail
@@ -25,29 +25,29 @@ IGNITE_VERSION=0.7.1
 WKSCTL_VERSION=0.8.4
 
 config_backend() {
-    sed -n -e 's/^backend: *\(.*\)/\1/p' config.yaml
+  sed -n -e 's/^backend: *\(.*\)/\1/p' config.yaml
 }
 
 set_config_backend() {
-    local tmp=.config.yaml.tmp
+  local tmp=.config.yaml.tmp
 
-    sed -e "s/^backend: .*$/backend: ${1}/" config.yaml > "${tmp}" && \
-        mv "${tmp}" config.yaml && \
-        rm -f "${tmp}"
+  sed -e "s/^backend: .*$/backend: ${1}/" config.yaml >"${tmp}" &&
+    mv "${tmp}" config.yaml &&
+    rm -f "${tmp}"
 }
 
 do_footloose() {
-    if [ "$(config_backend)" == "ignite" ]; then
-        $sudo env "PATH=${PATH}" footloose "${@}"
-    else
-        footloose "${@}"
-    fi
+  if [ "$(config_backend)" == "ignite" ]; then
+    $sudo env "PATH=${PATH}" footloose "${@}"
+  else
+    footloose "${@}"
+  fi
 }
 
-if git_current_branch > /dev/null 2>&1; then
-    log "Using git branch: $(git_current_branch)"
+if git_current_branch >/dev/null 2>&1; then
+  log "Using git branch: $(git_current_branch)"
 else
-    error "Please checkout a git branch."
+  error "Please checkout a git branch."
 fi
 
 git_remote="$(git config --get "branch.$(git_current_branch).remote" || true)" # fallback to "", user may override
@@ -56,7 +56,7 @@ download="yes"
 download_force="no"
 
 setup_help() {
-    echo "
+  echo "
     setup.sh
 
     - ensure dependent binaries are available
@@ -73,38 +73,38 @@ setup_help() {
     "
 }
 while test $# -gt 0; do
-    case "${1}" in
-    --no-download)
-        download="no"
-        ;;
-    --force-download)
-        download_force="yes"
-        ;;
-    --git-remote)
-        shift
-        git_remote="${1}"
-        ;;
-    --git-deploy-key)
-        shift
-        git_deploy_key="--git-deploy-key=${1}"
-        log "Using git deploy key: ${1}"
-        ;;
-    -h|--help)
-        setup_help
-        exit 0
-        ;;
-    *)
-        setup_help
-        error "unknown argument '${1}'"
-        ;;
-    esac
+  case "${1}" in
+  --no-download)
+    download="no"
+    ;;
+  --force-download)
+    download_force="yes"
+    ;;
+  --git-remote)
     shift
+    git_remote="${1}"
+    ;;
+  --git-deploy-key)
+    shift
+    git_deploy_key="--git-deploy-key=${1}"
+    log "Using git deploy key: ${1}"
+    ;;
+  -h | --help)
+    setup_help
+    exit 0
+    ;;
+  *)
+    setup_help
+    error "unknown argument '${1}'"
+    ;;
+  esac
+  shift
 done
 
 if [ "${git_remote}" ]; then
-    log "Using git remote: ${git_remote}"
+  log "Using git remote: ${git_remote}"
 else
-    error "
+  error "
 Please configure a remote for your current branch:
     git branch --set-upstream-to <remote_name>/$(git_current_branch)
 
@@ -117,20 +117,20 @@ fi
 echo
 
 if [ "${download}" == "yes" ]; then
-    mkdir -p "${HOME}/.wks/bin"
-    export PATH="${HOME}/.wks/bin:${PATH}"
+  mkdir -p "${HOME}/.wks/bin"
+  export PATH="${HOME}/.wks/bin:${PATH}"
 fi
 
 # On macOS, we only support the docker backend.
 if [ "$(goos)" == "darwin" ]; then
-    set_config_backend docker
+  set_config_backend docker
 fi
 
 check_command docker
 check_version jk "${JK_VERSION}"
 check_version footloose "${FOOTLOOSE_VERSION}"
 if [ "$(config_backend)" == "ignite" ]; then
-    check_version ignite "${IGNITE_VERSION}"
+  check_version ignite "${IGNITE_VERSION}"
 fi
 check_version wksctl "${WKSCTL_VERSION}"
 
@@ -139,9 +139,9 @@ jk generate -f config.yaml setup.js
 
 cluster_key="cluster-key"
 if [ ! -f "${cluster_key}" ]; then
-    # Create the cluster ssh key with the user credentials.
-    log "Creating SSH key"
-    ssh-keygen -q -t rsa -b 4096 -C firekube@footloose.mail -f ${cluster_key} -N ""
+  # Create the cluster ssh key with the user credentials.
+  log "Creating SSH key"
+  ssh-keygen -q -t rsa -b 4096 -C firekube@footloose.mail -f ${cluster_key} -N ""
 fi
 
 log "Creating virtual machines"
@@ -149,8 +149,8 @@ do_footloose create
 
 log "Creating Cluster API manifests"
 status="footloose-status.yaml"
-do_footloose status -o json > "${status}"
-jk generate -f config.yaml -f "${status}" setup.js
+do_footloose status -o json >"${status}"
+# jk generate -f config.yaml -f "${status}" setup.js
 rm -f "${status}"
 
 log "Updating container images and git parameters"
